@@ -22,15 +22,15 @@ namespace CWLU
 
         #region Globális változók
 
-        enum mentes_nev
+        enum m_nev
         {
-            program_verzio,
-            forditas_verzio,
-            auto_program,
-            auto_nyelv,
-            nev,
-            auto_nev,
-            cwmappa
+            ver_launcher = 0,
+            ver_forditas = 1,
+            auto_program = 2,
+            auto_nyelv = 3,
+            nev = 4,
+            auto_nev = 5,
+            cwmappa = 6
         };
 
         string[] mentes_Mezok = new string[] {
@@ -43,21 +43,29 @@ namespace CWLU
             "CWMappa"                      //6
         };
 
+        const string fajl_beallitas = "CWHUpdate.ms";
+        const string host = "cwh.no-ip.hu";
+
+        const string exe_cube = "cube.exe";
+        const string exe_launcher = "CubeLauncher.exe";
+
+        const string batch_del = "del.bat";
+        const string batch_run = "run.bat";
+
+        const int port_web = 80;
+        const int port_cubeworld = 12345;
+
+        //Online Adatok
+        int ver_online_nyelv = -1;
+        int ver_online_program = -1;
+
         List<string> mentes_Ertekek;
         List<string> mentes_alap_Ertekek;
 
-        const string fileNev = "CWHUpdate.ms";
-        const string host = "cwh.no-ip.hu";
-
-        const string cubeExe = "cube.exe";
-        const string cubeLauncher = "CubeLauncher.exe";
-
-        const string delBat = "del.bat";
-        const string runBat = "run.bat";
-
         string http_host;
 
-        bool Online = false;
+        bool online_game = false;
+        bool online_web = false;
 
         #endregion
 
@@ -68,22 +76,46 @@ namespace CWLU
             InitializeComponent();
 
             //Ez nem kell mert a Bat maga fogja törölni magát ha bezárod a Launchert - 2013_07_26_1620
-            //FajlTorles(delBat);
+            FajlTorles(batch_del);
 
             http_host = "http://" + host + "/";
             MentesEpites();
             mentes_alap_Ertekek = mentes_Ertekek;
         }
 
-
+        //2013_07_27_1630
         void Indul(object sender, EventArgs e)
         {
-            //Változók létrehozása
-            bool BeallitasokFajl = false;
-            string BeallitasokFajlHely = fileNev;
-
 
             #region Szerver elérhetőség ellenőrzése
+
+            //Új Server elérhetőség
+            online_web = ServerPortEllenorzes(port_web);
+            online_game = ServerPortEllenorzes(port_cubeworld);
+
+            if (online_web)
+            {
+                HirekTxt.Text = new System.Net.WebClient().DownloadString(http_host + "hirek.ms");
+
+                //Verziók Letöltse - 2013_07_27_1448
+                string[] OnlineSorok = new System.Net.WebClient().DownloadString(http_host + "forditasversion.ms").Split(';');
+
+                string[] OnlineProgram = OnlineSorok[0].Split('=');
+                string[] OnlineNyelv = OnlineSorok[1].Split('=');
+
+                OnlineProgramVerzio.Text = OnlineProgram[1];
+                OnlineNyelvVerzio.Text = OnlineNyelv[1];
+            }
+            else
+            {
+                string web = online_web ? "Elérhető" : "Nem Elérhető";
+                string game = online_game ? "Elérhető" : "Nem Elérhető";
+                MessageBox.Show("Web oldal állapot:  " + web + "\nServer állapot:  " + game, "Állapot");
+            }
+
+            #region Régi Server elérhetőség check
+            /*          
+            //Régi - 2013_07_27_1548
             TcpClient tcpClient = new TcpClient();
             IAsyncResult ar = tcpClient.BeginConnect(host, 80, null, null);
             System.Threading.WaitHandle wh = ar.AsyncWaitHandle;
@@ -98,19 +130,24 @@ namespace CWLU
                     Online = true;
 
                 //Ha elérhető, akkor adatok feltöltése
-                if (Online == true)
+                if (Online)
                 {
-
-                    //Hírek betöltse
-                    string Hirek = new System.Net.WebClient().DownloadString(http_host + "hirek.ms");
-                    HirekTxt.Text = Hirek;
+                    //Hírek Letöltse - 2013_07_27_1433
+                    //string Hirek = new System.Net.WebClient().DownloadString(http_host + "hirek.ms");
+                    //HirekTxt.Text = Hirek;
+                    HirekTxt.Text = new System.Net.WebClient().DownloadString(http_host + "hirek.ms");
 
                     //OnlineOffline.Text = "Elérhető";
-                    string OnlineBeallitasok = new System.Net.WebClient().DownloadString(http_host + "forditasversion.ms");
+                    //string[] OnlineBeallitasok = new System.Net.WebClient().DownloadString(http_host + "forditasversion.ms").Split(';');
 
-                    string[] OnlineSorok = OnlineBeallitasok.Split(';');
+                    //string[] OnlineSorok = OnlineBeallitasok.Split(';');
+
+                    //Verziók Letöltse - 2013_07_27_1448
+                    string[] OnlineSorok = new System.Net.WebClient().DownloadString(http_host + "forditasversion.ms").Split(';');
+
                     string[] OnlineProgram = OnlineSorok[0].Split('=');
                     string[] OnlineNyelv = OnlineSorok[1].Split('=');
+
                     OnlineProgramVerzio.Text = OnlineProgram[1];
                     OnlineNyelvVerzio.Text = OnlineNyelv[1];
                 }
@@ -121,22 +158,27 @@ namespace CWLU
                 //OnlineOffline.Text = "Nem elérhető";
                 Online = false;
             }
+*/
             #endregion
 
+            #endregion
+
+
             #region Beállítások létrehozása és betöltése
-            BeallitasokFajl = (File.Exists(BeallitasokFajlHely) ? true : false);
-            if (!BeallitasokFajl)
+
+            if (!File.Exists(fajl_beallitas))
             {
                 try
                 {
-                    using (StreamWriter writer = new StreamWriter(BeallitasokFajlHely, true))
+                    using (StreamWriter writer = new StreamWriter(fajl_beallitas, true))
                     {
+                        //Ekkor még a 'mentes_Ertekek' változóban az alapértékek vannak^^
                         writer.Write(AlapBeallitasErekek(mentes_Ertekek));
                     }
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("Mentesek betöltése.", "Hiba");
+                    MessageBox.Show("Mentesek betöltése.", "Beállítás Hiba");
                 }
 
                 // MessageBox.Show("Üdvözöllek!\nMiszter Soul vagyok, és ez itt az első verziója a Cube World Hungary - Frissítő programjának, ami automatikusan felajánlja a legújabban megjelent frissítésem letöltését a játékhoz.\nAhhoz, hogy ez működjön, csak ennyit kell tenned.\n1. Tedd a programot a Cube World mappájába,\n2. Indítsd el.\n3. A program első alkalommal mindenféle képpen felajánlja, hogy letöltsd a magyarítást, hisz a legfrissebbet tölti le, nem tudhatja, hogy milyen van a gépeden.\n\nA program kiírja, a szerver állapotát, és a fordítás verzióját, ha frissítés lesz elérhető a programhoz, azt jelezni fogja, és le fogja tölteni (írni fogja ha kell tenned valamit utána)\n\nJó játékot kívánok!\nMiszter Soul\n\nHa tetszik a program / fordítás, akkor a munkámat annyival értékeld, hogy nyomj egy like-ot a Cube World HU facebook oldalán, és egy feliratkozást a csatornámra. (Linkek a program alsó részén)");
@@ -145,7 +187,8 @@ namespace CWLU
             {
 
                 //Van beállítás fálj szóval be lehet állítani a Form elemeinek értékeit a mentés alapján
-                string[] Sorok = File.ReadAllText(fileNev).Split(';');
+/*
+                string[] Sorok = File.ReadAllText(fajl_beallitas).Split(';');
 
                 string[] OfflineProgramVersion = Sorok[0].Split('=');
                 string[] OfflineNyelvVersion = Sorok[1].Split('=');
@@ -153,90 +196,140 @@ namespace CWLU
                 string[] OfflineAutoNyelv = Sorok[3].Split('=');
                 string[] OfflineNev = Sorok[4].Split('=');
                 string[] OfflineAutoNev = Sorok[5].Split('=');
-                
-                
-
-
-                
                 string[] CWMappahely = Sorok[6].Split('=');
                 CWMappa.Text = CWMappahely[1].Replace("/", "\\");
-                
+*/
+
+                string[] Sorok = File.ReadAllText(fajl_beallitas).Split(';');
+                MentesEpites(Sorok);
+
                 //Offline program verzió
-                OfflineProgramVerzio.Text = OfflineProgramVersion[1];
-                
+                //OfflineProgramVerzio.Text = OfflineProgramVersion[1];
+                OfflineProgramVerzio.Text = mentes_Ertekek[(int)m_nev.ver_launcher];
+
                 //Offline nyelv verzió
-                OfflineNyelvVerzio.Text = OfflineNyelvVersion[1];
+                //OfflineNyelvVerzio.Text = OfflineNyelvVersion[1];
+                OfflineNyelvVerzio.Text = mentes_Ertekek[(int)m_nev.ver_forditas];
 
-                bool notOnline = false;
+                //Cube World Mappa elérési útja^^
+                CWMappa.Text = mentes_Ertekek[(int)m_nev.cwmappa].Replace("/", "\\");
 
-                //Automatikus Nyelv Pipa-e
-                if (OfflineAutoNyelv[1] == "True")
+                //Néhány helyi válltozó a szép kinézethez :)
+                bool update_lang = false;
+                bool update_launcher = false;
+
+                //Automatikus Nyelv
+                //if (OfflineAutoNyelv[1] == "True")
+                if (mentes_Ertekek[(int)m_nev.auto_nyelv] == "True")
                 {
+                    //Checkbox
                     AutoNyelv.Checked = true;
+                    //Button
                     NyelvFrissites.Enabled = false;
 
-                    if (CWMappa.Text != "None")
-                        if (Online)
-                            NyelvemFrissites();
-                        else
-                        {
-                            notOnline = true;
-                            MessageBox.Show("A server nem elérhető. Próbáld késöbb...", "Hiba");
-                        }
+                    //if (CWMappa.Text != "None")
+                    if (mentes_Ertekek[(int)m_nev.cwmappa] != "None")
+                        
+                        if (online_web)
+                            update_lang = true;
                 }
                 else
                     AutoNyelv.Checked = false;
 
 
                 //Automatikus Program(Launcher)
-                if (OfflineAutoProgram[1] == "True")
+                //if (OfflineAutoProgram[1] == "True")
+                if(mentes_Ertekek[(int)m_nev.auto_program] == "True")
                 {
+                    //Checkbox
                     AutoProgram.Checked = true;
+                    //Button
                     ProgramFrissites.Enabled = false;
-                   
+
                     if (int.Parse(OnlineProgramVerzio.Text) > int.Parse(OfflineProgramVerzio.Text))
-                        if (CWMappa.Text != "None")
-                            if(Online)
-                                ProgramomFrissites();
-                            else if (!notOnline)
-                            {
-                                notOnline = true;
-                                MessageBox.Show("A server nem elérhető. Próbáld késöbb...", "Hiba");
-                            }
+                    {
+                        ProgramFrissites.Enabled = true;
+
+                        //if (CWMappa.Text != "None")
+                        if (mentes_Ertekek[(int)m_nev.cwmappa] != "None")
+                            if (online_web)
+                                update_launcher = true;
+                    }
                 }
                 else
                     AutoProgram.Checked = false;
 
 
                 //AutoNév Pipa-e
-                if (OfflineAutoNev[1] == "True")
+                //if (OfflineAutoNev[1] == "True")
+                if(mentes_Ertekek[(int)m_nev.auto_nev] == "True")
                 {
                     AutoNev.Checked = true;
-                    NevText.Text = OfflineNev[1];
+                    //NevText.Text = OfflineNev[1];
+                    NevText.Text = mentes_Ertekek[(int)m_nev.nev];
                 }
                 else
                     AutoNev.Checked = false;
+
+
+                if (update_lang)
+                    NyelvemFrissites();
+                if (update_launcher)
+                    ProgramomFrissites();
             }
 
 
             #endregion
 
-            if(int.Parse(OnlineProgramVerzio.Text) > int.Parse(OfflineProgramVerzio.Text))
+            int temp_ver_offline;
+            int.TryParse(OfflineProgramVerzio.Text, out temp_ver_offline);
+            int ver_offline_program = temp_ver_offline;
+
+
+            ver_online_program = int.Parse(OnlineProgramVerzio.Text);
+
+
+            int temp_offline_nyelv;
+            int.TryParse(OfflineNyelvVerzio.Text, out temp_offline_nyelv);
+            int ver_offline_nyelv = temp_offline_nyelv;
+
+            int temp_online_nyelv;
+            int.TryParse(OnlineNyelvVerzio.Text, out temp_online_nyelv);
+            ver_online_nyelv = temp_online_nyelv;
+
+
+            //2013_07_27_1613 - Szóval biztos lesznek olyanok akik megkeresik a mentés fáljt és bele kontárkodnak 
+            //akkor van probléma ha magasabb verziót írnak bele mint ami az OnlineVerzió x|
+            bool anticheat = false;
+
+            if (ver_online_program > ver_offline_program)
                 ProgramFrissites.Enabled = true;
+            else
+            {
+                OfflineProgramVerzio.Text = ver_online_program.ToString();
+                anticheat = true;
+            }
 
-            if(int.Parse(OnlineNyelvVerzio.Text) > int.Parse(OfflineNyelvVerzio.Text))
+            if (ver_online_nyelv > ver_offline_nyelv)
                 NyelvFrissites.Enabled = true;
+            else
+            {
+                OfflineNyelvVerzio.Text = ver_online_nyelv.ToString();
+                anticheat = true;
+            }
 
+            if(anticheat)
+                BeallitasMentes(true, false);
         }
 
-        //Telepítés helye
+        //Telepítés helye - 2013_07_27_1645
         void CWTelepites(object sender, EventArgs e)
         {
             var CubeFolder = new System.Windows.Forms.FolderBrowserDialog();
 
             if (CubeFolder.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                string[] files = Directory.GetFiles(CubeFolder.SelectedPath, cubeExe, SearchOption.AllDirectories);
+                string[] files = Directory.GetFiles(CubeFolder.SelectedPath, exe_cube, SearchOption.AllDirectories);
                 if (files.Length >= 1)
                 {
                     CWMappa.Text = CubeFolder.SelectedPath;
@@ -244,36 +337,43 @@ namespace CWLU
                     //Újra építi a mentés listát mert megválltozik a CWMappa elérési útja
                     MentesEpites();
 
-                    //AutoNyelv - 2013_07_26_1619
-                    if (mentes_Ertekek[1] == "0")
+                    string ver_offline_nyelv = mentes_Ertekek[(int)m_nev.ver_forditas];
+                    
+                    //AutoNyelv - 2013_07_26_1619 -> 2013_07_27_1619 - LOL :P ez nem lehet véletlen
+                    if (ver_offline_nyelv == "0" || int.Parse(ver_offline_nyelv) < ver_online_nyelv)
                     {
+                        //Button
                         NyelvFrissites.Enabled = true;
                     }
 
                 }
                 else
-                    MessageBox.Show("A " + cubeExe + " nem található ebben a mappában amit kiválasztottál: " + CubeFolder.SelectedPath, "HIBA");
+                    MessageBox.Show("A " + exe_cube + " nem található ebben a mappában amit kiválasztottál: " + CubeFolder.SelectedPath, "Cube World Telepítési hely Hiba");
             }
         }
 
-        //Automatikus Nyelv frissítő
+        //Automatikus Nyelv frissítő - 2013_07_27_1650
         void NyelvemFrissites()
         {
             using (WebClient Client = new WebClient())
                 try
                 {
-                    Client.DownloadFile(http_host + "data4.ms", CWMappa.Text + "\\data4.db");
-                    Client.DownloadFile(http_host + "Olvassel.ms", CWMappa.Text + "\\OlvassEl.txt");
-                    OfflineNyelvVerzio.Text = OnlineNyelvVerzio.Text;
+                    if (online_web)
+                    {
+                        Client.DownloadFile(http_host + "data4.ms", CWMappa.Text + "\\data4.db");
+                        Client.DownloadFile(http_host + "Olvassel.ms", CWMappa.Text + "\\OlvassEl.txt");
 
-                    //Újra kell építeni a mentés listát mert megválltozott az OfflineNyelvVerzio
-                    MentesEpites();
+                        OfflineNyelvVerzio.Text = OnlineNyelvVerzio.Text;
 
-                    NyelvFrissites.Enabled = false;
+                        //Újra kell építeni a mentés listát mert megválltozott az OfflineNyelvVerzio
+                        MentesEpites();
+
+                        NyelvFrissites.Enabled = false;
+                    }
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("Válaszd ki a játék telepítésének a helyét.", "Hiba");
+                    MessageBox.Show("Válaszd ki a játék telepítésének a helyét.", "Cube World Telepítési hely Hiba");
                 }
 
         }
@@ -288,87 +388,111 @@ namespace CWLU
             using (WebClient Client = new WebClient())
                 try
                 {
-                    Client.DownloadFile(http_host + "cwhu.exe", "Cube World Hungary Launcher v" + OnlineProgramVerzio.Text + ".exe");
-                    OfflineProgramVerzio.Text = OnlineProgramVerzio.Text;
-
-                    //Újra kell építeni a mentést mert megváltozott a OfflineProgramVerzio
-                    BeallitasMentes(true, false);
-
-                    ProgramFrissites.Enabled = false;
-
-                    FajlTorles(delBat);
-                    using (StreamWriter writer = new StreamWriter(delBat, true))
+                    if (online_web)
                     {
-                        string regiNev = Application.StartupPath + "\\" + System.AppDomain.CurrentDomain.FriendlyName;//.Replace(".exe", OnlineProgramVerzio.Text + ".exe");
+                        Client.DownloadFile(http_host + "cwhu.exe", "Cube World Hungary Launcher v" + OnlineProgramVerzio.Text + ".exe");
+                        
+                        OfflineProgramVerzio.Text = OnlineProgramVerzio.Text;
+                        ProgramFrissites.Enabled = false;
+                        
+                        //Újra kell építeni a mentést mert megváltozott a OfflineProgramVerzio
+                        BeallitasMentes(true, false);
 
-                        //régi rossz frissitve 2013_07_26_1316
-                        //writer.Write("del \"" + regiNev.Replace(".exe", OnlineProgramVerzio.Text + ".exe") + "\"" +
-                        //    "\nren \"" + "\\" + regiNev + "\" \"" + System.AppDomain.CurrentDomain.FriendlyName + "\"");
+                        FajlTorles(batch_del);
+                        using (StreamWriter writer = new StreamWriter(batch_del, true))
+                        {
+                            //string regiNev = Application.StartupPath + "\"" + System.AppDomain.CurrentDomain.FriendlyName;
+                            string regiNev = System.AppDomain.CurrentDomain.FriendlyName;
+                            //MessageBox.Show("regiNev Check\n" + regiNev);
 
-                        writer.WriteLine("@ECHO OFF");
-                        writer.WriteLine("timeout /t 1");
-                        writer.WriteLine("del \"" + regiNev.Replace(".exe", " v" + OnlineProgramVerzio.Text + ".exe") + "\"");
-                        writer.WriteLine("ren \"" + regiNev + "\" \"" + System.AppDomain.CurrentDomain.FriendlyName + "\"");
+                            //I was here
 
-                        writer.WriteLine("timeout /t 1");
+                            //régi rossz frissitve 2013_07_26_1316
+                            //writer.Write("del \"" + regiNev.Replace(".exe", OnlineProgramVerzio.Text + ".exe") + "\"" +
+                            //    "\nren \"" + "\\" + regiNev + "\" \"" + System.AppDomain.CurrentDomain.FriendlyName + "\"");
 
-                        //MessageBox.Show(System.AppDomain.CurrentDomain.FriendlyName);
+                            writer.WriteLine("@ECHO OFF");
+                            writer.WriteLine("timeout /t 2");
+                            
+                            //string del = "del \"" + regiNev.Replace(".exe", " v" + OnlineProgramVerzio.Text + ".exe") + "\"";
+                            string del = "del \"" + regiNev + "\"";
 
-                        writer.WriteLine("\"" + System.AppDomain.CurrentDomain.FriendlyName + "\"");
-                        writer.WriteLine("del %0");
-                        writer.WriteLine("exit");
-                    }
+                            //MessageBox.Show("del check\n" + del);
+                            writer.WriteLine(del);
 
-                    #region Csak Command
-                    /*
-                string tempNev = Application.StartupPath + "\\" + System.AppDomain.CurrentDomain.FriendlyName;//.Replace(".exe", OnlineProgramVerzio.Text + ".exe");
+                            
+                            //string rename = "ren \"" + regiNev + "\" \"" + System.AppDomain.CurrentDomain.FriendlyName + "\"";
+                            string rename = "ren \"" + regiNev.Replace(".exe", " v" + OnlineProgramVerzio.Text + ".exe") + "\" \"" + regiNev + "\"";
+                            //MessageBox.Show("rename check\n" + rename);
+                            writer.WriteLine(rename);
+
+
+                            writer.WriteLine("timeout /t 2");
+
+                            //MessageBox.Show(System.AppDomain.CurrentDomain.FriendlyName);
+
+                            writer.WriteLine("\"" + regiNev + "\"");
+                            writer.WriteLine("del %0");
+                            writer.WriteLine("exit");
+
+                            writer.Close();
+                        }
+
+                        #region Csak Command, késöbb lesz...
+                        /*
+                        string tempNev = Application.StartupPath + "\\" + System.AppDomain.CurrentDomain.FriendlyName;//.Replace(".exe", OnlineProgramVerzio.Text + ".exe");
                     
-                tempNev = System.AppDomain.CurrentDomain.FriendlyName;
+                        tempNev = System.AppDomain.CurrentDomain.FriendlyName;
 
 
-                string updateCommand = "@ECHO OFF\n" +
-                    "timeout /t 1\n" +
-                    "del \"" + tempNev.Replace(".exe", " v" + OnlineProgramVerzio.Text + ".exe") + "\"\n" +
-                    "ren \"" + tempNev + "\" \"" + System.AppDomain.CurrentDomain.FriendlyName + "\"\npause";
+                        string updateCommand = "@ECHO OFF\n" +
+                            "timeout /t 1\n" +
+                            "del \"" + tempNev.Replace(".exe", " v" + OnlineProgramVerzio.Text + ".exe") + "\"\n" +
+                            "ren \"" + tempNev + "\" \"" + System.AppDomain.CurrentDomain.FriendlyName + "\"\npause";
 
-                ExecuteCommand(updateCommand);
-*/
-                    #endregion
+                        ExecuteCommand(updateCommand);
+                        */
+                        #endregion
 
 
-                    Process gocube = null;
-                    try
-                    {
-                        string cubedir = string.Format(Application.StartupPath);
-                        gocube = new Process();
-                        gocube.StartInfo.WorkingDirectory = cubedir;
-                        gocube.StartInfo.FileName = delBat;
+                        Process gocube = null;
+                        try
+                        {
+                            string cubedir = string.Format(Application.StartupPath);
+                            gocube = new Process();
+                            gocube.StartInfo.WorkingDirectory = cubedir;
+                            gocube.StartInfo.FileName = batch_del;
 
-                        gocube.StartInfo.CreateNoWindow = true;
-                        gocube.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                            //elrejti az ablakot
+                            gocube.StartInfo.CreateNoWindow = true;
+                            gocube.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-                        gocube.Start();
+                            gocube.Start();
+                        }
+                        catch (Exception)
+                        {
+                            MessageBox.Show("A " + batch_del + " fájl nem található vagy indítható el.", "Hiba");
+                        }
+
+
+                        //FONTOS! -> OnlineProgramVerzio mentés -> OfflineVerzióvá
+                        if (File.Exists(fajl_beallitas))
+                        {
+                            string teljesSzoveg = File.ReadAllText(fajl_beallitas);
+                            string[] Sorok = teljesSzoveg.Split(';');
+
+                            int verzio = (int)m_nev.ver_launcher;
+                            File.WriteAllText(fajl_beallitas, Regex.Replace(teljesSzoveg, Sorok[verzio], mentes_Mezok[verzio] + "=" + OnlineProgramVerzio.Text));
+                            //I was here 2013_07_27_1733
+
+                            this.Close();
+                            //MessageBox.Show("Frissites történt!");
+                        }
                     }
-                    catch (Exception)
-                    {
-                        MessageBox.Show("A " + delBat + " fájl nem indítható el.", "Hiba");
-                    }
-
-
-                    //FONTOS! -> OnlineProgramVerzio mentés
-                    if (File.Exists(fileNev))
-                    {
-                        string[] Sorok = File.ReadAllText(fileNev).Split(';');
-                        File.WriteAllText(fileNev, Regex.Replace(File.ReadAllText(fileNev), Sorok[0], mentes_Mezok[0] + "=" + OnlineProgramVerzio.Text));
-
-                        this.Close();
-                        //MessageBox.Show("Frissites történt!");
-                    }
-
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("Program frissítés", "Hiba");
+                    MessageBox.Show("Launcher frissítés", "Hiba");
                 }
         }
 
@@ -382,11 +506,10 @@ namespace CWLU
             if(rebuild)
                 MentesEpites();
             
-            FajlTorles(fileNev);
-
+            FajlTorles(fajl_beallitas);
             try
             {
-                using (StreamWriter writer = new StreamWriter(fileNev, true))
+                using (StreamWriter writer = new StreamWriter(fajl_beallitas, true))
                 {
                     for (int i = 0; i < mentes_Mezok.Length; i++)
                     {
@@ -395,12 +518,12 @@ namespace CWLU
                     writer.Close();
 
                     if (popup)
-                        MessageBox.Show("A beállítások mentése elkészült.", "Siker");
+                        MessageBox.Show("A beállítások mentése elkészült.", "Beállítás Sikerült");
                 }
             }
             catch (Exception)
             {
-                MessageBox.Show("Mentés probléma", "Hiba");
+                MessageBox.Show("Mentés probléma", "Beállítás Hiba");
             }
         }
 
@@ -425,27 +548,41 @@ namespace CWLU
             return alaptartalom;
         }
 
-        void MentesEpites()
+        void MentesEpites(string[] tomb = null)
         {
-            //Ezt sajnos manuálisan kell hozzáadni ha újabb értéket szeretnél eltárolni, az indexek mellékelve
-
             mentes_Ertekek = new List<string>(mentes_Mezok.Length);
             mentes_Ertekek.Clear();
+            
+            if (tomb == null)
+            {
+                //Ezt sajnos manuálisan kell hozzáadni ha újabb értéket szeretnél eltárolni, az indexek mellékelve
 
-            mentes_Ertekek.Add(OfflineProgramVerzio.Text);           //0
-            mentes_Ertekek.Add(OfflineNyelvVerzio.Text);             //1
-            mentes_Ertekek.Add(AutoProgram.Checked.ToString());      //2
-            mentes_Ertekek.Add(AutoNyelv.Checked.ToString());        //3
-            mentes_Ertekek.Add(NevText.Text);                        //4
-            mentes_Ertekek.Add(AutoNev.Checked.ToString());          //5
-            mentes_Ertekek.Add(CWMappa.Text);                        //6
+                mentes_Ertekek.Add(OfflineProgramVerzio.Text);           //0
+                mentes_Ertekek.Add(OfflineNyelvVerzio.Text);             //1
+                mentes_Ertekek.Add(AutoProgram.Checked.ToString());      //2
+                mentes_Ertekek.Add(AutoNyelv.Checked.ToString());        //3
+                mentes_Ertekek.Add(NevText.Text);                        //4
+                mentes_Ertekek.Add(AutoNev.Checked.ToString());          //5
+                mentes_Ertekek.Add(CWMappa.Text);                        //6
+            }
+            else
+            {
+                for (int i = 0; i < tomb.Length - 1; i++)
+                {
+                    string[] adat = tomb[i].Split('=');
+                    adat[1] = adat[1].Replace("/", "\\");
+                    //MessageBox.Show(adat[1]);
+                    
+                    mentes_Ertekek.Add(adat[1]);
+                }
+            }
         }
 
         void BatchIndito(string futtatniKivantFajl)
         {
             if (CWMappa.Text != "None")
             {
-                using (StreamWriter writer = new StreamWriter(CWMappa.Text + "/" + runBat, false))
+                using (StreamWriter writer = new StreamWriter(CWMappa.Text + "/" + batch_run, false))
                 {
                     writer.WriteLine("@ECHO OFF");
                     writer.WriteLine("start " + futtatniKivantFajl);
@@ -457,7 +594,7 @@ namespace CWLU
                     string cubedir = string.Format(CWMappa.Text);
                     gocube = new Process();
                     gocube.StartInfo.WorkingDirectory = cubedir;
-                    gocube.StartInfo.FileName = runBat;
+                    gocube.StartInfo.FileName = batch_run;
 
                     gocube.StartInfo.CreateNoWindow = true;
                     gocube.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
@@ -466,7 +603,7 @@ namespace CWLU
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show(runBat + " vagy " + futtatniKivantFajl + " nem található.", "Hiba");
+                    MessageBox.Show(batch_run + " vagy " + futtatniKivantFajl + " nem található.", "Hiba");
                 }
 
                 this.Close();
@@ -483,9 +620,37 @@ namespace CWLU
                 File.Delete(faljNev);
         }
 
+        bool ServerPortEllenorzes(int port, bool popup=false)
+        {
+            //Szerver elérhetőség ellenőrzése
+            TcpClient tcpClient = new TcpClient();
+            IAsyncResult ar = tcpClient.BeginConnect(host, port, null, null);
 
-        //Be kellene állítani hogy működjön de nem biztos hogy ez a legjobb megoldás rá
-        public void ExecuteCommand(string command)
+            System.Threading.WaitHandle wh = ar.AsyncWaitHandle;
+            try
+            {
+                if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2), false))
+                {
+                    tcpClient.Close();
+                    throw new TimeoutException();
+                }
+                if(popup)
+                    MessageBox.Show("A szerver fut!\nCsatlakozz te is: " + host, "Állapot: Elérhető");
+                
+                return true;
+            }
+            catch (Exception)
+            {
+                if (popup)
+                    MessageBox.Show("A szerver NEM fut!\nNézz fel a honlapra, hátha van valami oka, hogy nem fut.\n" + http_host, "Állapot: Nem elérhető");
+               
+                return false;
+            }
+        }
+
+
+        //Ezt még át kell néznem, de véglegesen ez lenne a jó megoldás a Batch helyett. - 2013_07_27_1847
+        void ExecuteCommand(string command)
         {
             ProcessStartInfo psi = new ProcessStartInfo("cmd.exe")
             {
@@ -586,18 +751,18 @@ namespace CWLU
         //Launcher indító gomb
         void LauncherInditas(object sender, EventArgs e)
         {
-            DialogResult dialogResult = MessageBox.Show("Biztosan elindítod a Launchert?\n(A "+ cubeLauncher.Replace(".exe", "") +" lefrissíti a játékot, és felülírja a magyarítást)", "CW Launcher indítása?", MessageBoxButtons.YesNo);
+            DialogResult dialogResult = MessageBox.Show("Biztosan elindítod a Launchert?\n(A "+ exe_launcher.Replace(".exe", "") +" lefrissíti a játékot, és felülírja a magyarítást)", "CW Launcher indítása?", MessageBoxButtons.YesNo);
             if (dialogResult == DialogResult.Yes)
             {
                 OfflineNyelvVerzio.Text = "0";
-                BatchIndito(cubeLauncher);
+                BatchIndito(exe_launcher);
             }
         }
 
         //CubeWorld indito gomb
         void CubeWorldInditas(object sender, EventArgs e)
         {
-            BatchIndito(cubeExe);
+            BatchIndito(exe_cube);
         }
 
 
@@ -606,10 +771,10 @@ namespace CWLU
         {
 
             //Ez a sor azért kell, hogy mielőtt kitörölné a run.bat fálj előtte azért hagyjuk hogy elinduljon a run.bat! :)
-            System.Threading.Thread.Sleep(200);
+            System.Threading.Thread.Sleep(100);
 
-            FajlTorles(CWMappa.Text + "/" + runBat);
-            FajlTorles(CWMappa.Text + "/" + delBat);
+            FajlTorles(CWMappa.Text + "/" + batch_run);
+            FajlTorles(CWMappa.Text + "/" + batch_del);
 
 
 /*          
@@ -632,6 +797,10 @@ namespace CWLU
         #region ToolStripMenuItem
         void szerverElérhetőségToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            //2013_07_27_1544
+            ServerPortEllenorzes(port_cubeworld, true);
+
+/*          //Régi
             //Szerver elérhetőség ellenőrzése
             TcpClient tcpClient = new TcpClient();
             IAsyncResult ar = tcpClient.BeginConnect(host, 12345, null, null);
@@ -650,6 +819,7 @@ namespace CWLU
             {
                 MessageBox.Show("A szerver NEM fut!\nNézz fel a honlapra, hátha van valami oka, hogy nem fut.\n" + http_host, "Állapot: Nem elérhető");
             }
+*/
 
         }
 
@@ -661,47 +831,45 @@ namespace CWLU
         void beállításokTörléseToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
-            using (StreamWriter writer = new StreamWriter(fileNev))
+            using (StreamWriter writer = new StreamWriter(fajl_beallitas))
             {
                 writer.Write(AlapBeallitasErekek());
             }
 
-            //Alapok betöltése
-            string Beallitasok = File.ReadAllText(fileNev);
-            string[] Sorok = Beallitasok.Split(';');
 
-            string[] OfflineProgramVersion = Sorok[0].Split('=');
-            string[] OfflineNyelvVersion   = Sorok[1].Split('=');
-            string[] OfflineAutoProgram    = Sorok[2].Split('=');
-            string[] OfflineAutoNyelv      = Sorok[3].Split('=');
-            string[] OfflineNev            = Sorok[4].Split('=');
-            string[] OfflineAutoNev        = Sorok[5].Split('=');
-            string[] CWMappahely           = Sorok[6].Split('=');
+            /*  
+                //Régi
+                //Alapok betöltése - 2013_07_27_1511
+                //string Beallitasok = File.ReadAllText(fileNev);
+                //string[] Sorok = Beallitasok.Split(';');
+                string[] OfflineProgramVersion = Sorok[0].Split('=');
+                string[] OfflineNyelvVersion = Sorok[1].Split('=');
+                string[] OfflineAutoProgram = Sorok[2].Split('=');
+                string[] OfflineAutoNyelv = Sorok[3].Split('=');
+                string[] OfflineNev = Sorok[4].Split('=');
+                string[] OfflineAutoNev = Sorok[5].Split('=');
+                string[] CWMappahely = Sorok[6].Split('=');
+            */
 
-            mentes_Ertekek = new List<string>(Sorok.Length);
-            mentes_Ertekek.Clear();
+            //Fontos! ezek az értékek a kliensben vannak eltárolva, és az Offline adatokat lehet velük vissza állítani!!
+            string[] Sorok = File.ReadAllText(fajl_beallitas).Split(';');
+            MentesEpites(Sorok);
 
-/*
-            for (int i = 0; i < Sorok.Length; i++)
-            {
-                
-                string[] adat = Sorok[i].Split('=');
-                MessageBox.Show(adat[1]);
 
-                mentes_Ertekek.Add( adat[1] );
-            }
-*/
-
-                CWMappa.Text = CWMappahely[1].Replace("/", "\\");
+             //CWMappa.Text = CWMappahely[1].Replace("/", "\\");
+            CWMappa.Text = mentes_Ertekek[(int)m_nev.cwmappa].Replace("/", "\\");
             
             //Offline program verzió
-            OfflineProgramVerzio.Text = OfflineProgramVersion[1];
+            //OfflineProgramVerzio.Text = OfflineProgramVersion[1];
+            OfflineProgramVerzio.Text = mentes_Ertekek[(int)m_nev.ver_launcher];
            
             //Offline nyelv verzió
-            OfflineNyelvVerzio.Text = OfflineNyelvVersion[1];
+            //OfflineNyelvVerzio.Text = OfflineNyelvVersion[1];
+            OfflineNyelvVerzio.Text = mentes_Ertekek[(int)m_nev.ver_forditas];
 
             //AutoNyelv Pipa-e
-            if (OfflineAutoNyelv[1].ToString() == "True")
+            //if (OfflineAutoNyelv[1].ToString() == "True")
+            if (mentes_Ertekek[(int)m_nev.auto_nyelv].ToString() == "True")
             {
                 AutoNyelv.Checked = true;
                 NyelvFrissites.Enabled = false;
@@ -710,7 +878,8 @@ namespace CWLU
                 AutoNyelv.Checked = false;
             
             //AutoProgram
-            if (OfflineAutoProgram[1].ToString() == "True")
+            //if (OfflineAutoProgram[1].ToString() == "True")
+            if (mentes_Ertekek[(int)m_nev.auto_program].ToString() == "True")
             {
                 AutoProgram.Checked = true;
                 ProgramFrissites.Enabled = false;
@@ -719,15 +888,17 @@ namespace CWLU
                 AutoProgram.Checked = false;
 
             //AutoNév Pipa-e
-            if (OfflineAutoNev[1].ToString() == "True")
+            //if (OfflineAutoNev[1].ToString() == "True")
+            if (mentes_Ertekek[(int)m_nev.auto_nev].ToString() == "True")
             {
                 AutoNev.Checked = true;
-                NevText.Text = OfflineNev[1];
+                //NevText.Text = OfflineNev[1];
+                NevText.Text = mentes_Ertekek[(int)m_nev.nev];
             }
             else
                 AutoNev.Checked = false;
 
-            MessageBox.Show("A beállítások törlésre kerültek.", "Siker");
+            MessageBox.Show("A beállítások törlésre kerültek.", "Beállítások");
         }
         #endregion
 
