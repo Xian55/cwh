@@ -311,9 +311,6 @@
   <data name="&gt;&gt;label11.Name" xml:space="preserve">
     <value>label11</value>
   </data>
-  <data name="AutoNev.Text" xml:space="preserve">
-    <value>Belépési név megjegyzése</value>
-  </data>
   <data name="&gt;&gt;CWtelepites.Type" xml:space="preserve">
     <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
@@ -401,8 +398,8 @@
   <data name="&gt;&gt;label11.Type" xml:space="preserve">
     <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="menuStrip1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>634, 24</value>
+  <data name="label9.TabIndex" type="System.Int32, mscorlib">
+    <value>36</value>
   </data>
   <data name="&gt;&gt;JelszoText.Name" xml:space="preserve">
     <value>JelszoText</value>
@@ -579,8 +576,8 @@
   <data name="&gt;&gt;groupBox3.Type" xml:space="preserve">
     <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;label1.Name" xml:space="preserve">
-    <value>label1</value>
+  <data name="&gt;&gt;label3.Parent" xml:space="preserve">
+    <value>groupBox3</value>
   </data>
   <data name="&gt;&gt;beküldömAzÖtletemToolStripMenuItem.Name" xml:space="preserve">
     <value>beküldömAzÖtletemToolStripMenuItem</value>
@@ -2800,6 +2797,9 @@
   <data name="button1.Text" xml:space="preserve">
     <value>Cube World indítása</value>
   </data>
+  <data name="&gt;&gt;label1.Name" xml:space="preserve">
+    <value>label1</value>
+  </data>
   <data name="&gt;&gt;label9.Name" xml:space="preserve">
     <value>label9</value>
   </data>
@@ -2839,14 +2839,17 @@
   <data name="&gt;&gt;AutoProgram.Type" xml:space="preserve">
     <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="menuStrip1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>634, 24</value>
+  </data>
   <data name="linkLabel1.TabIndex" type="System.Int32, mscorlib">
     <value>37</value>
   </data>
   <data name="CWMappa.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="&gt;&gt;label3.Parent" xml:space="preserve">
-    <value>groupBox3</value>
+  <data name="AutoNev.Text" xml:space="preserve">
+    <value>Belépési név megjegyzése</value>
   </data>
   <data name="&gt;&gt;OfflineNyelvVerzio.Parent" xml:space="preserve">
     <value>groupBox3</value>
@@ -3058,9 +3061,6 @@
   <data name="linkLabel3.Text" xml:space="preserve">
     <value>Cube World</value>
   </data>
-  <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
-    <value>157, 12</value>
-  </data>
   <data name="label1.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
   </data>
@@ -3208,8 +3208,8 @@
   <data name="Jelszo.Text" xml:space="preserve">
     <value>Jelszó:</value>
   </data>
-  <data name="label9.TabIndex" type="System.Int32, mscorlib">
-    <value>36</value>
+  <data name="label4.Location" type="System.Drawing.Point, System.Drawing">
+    <value>157, 12</value>
   </data>
   <data name="&gt;&gt;label8.Type" xml:space="preserve">
     <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>

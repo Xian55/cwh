@@ -180,7 +180,7 @@
     <value>NoControl</value>
   </data>
   <data name="NyelvFrissites.Location" type="System.Drawing.Point, System.Drawing">
-    <value>1, 119</value>
+    <value>4, 119</value>
   </data>
   <data name="NyelvFrissites.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>4, 4, 4, 4</value>
@@ -273,7 +273,7 @@
     <value>NoControl</value>
   </data>
   <data name="ProgramFrissites.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 55</value>
+    <value>4, 55</value>
   </data>
   <data name="ProgramFrissites.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>4, 4, 4, 4</value>

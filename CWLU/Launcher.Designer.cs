@@ -431,10 +431,10 @@
 
         }
 
-        private void játékBeállításaiToolStripMenuItem_Click(object sender, System.EventArgs e)
-        {
-            throw new System.NotImplementedException();
-        }
+        //private void játékBeállításaiToolStripMenuItem_Click(object sender, System.EventArgs e)
+        //{
+        //    throw new System.NotImplementedException();
+        //}
 
         #endregion
 
