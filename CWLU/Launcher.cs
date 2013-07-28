@@ -101,7 +101,6 @@ namespace CWLU
             http_host = "http://" + host + "/";
             MentesEpites();
             mentes_alap_Ertek = mentes_Ertek;
-            
         }
 
 
